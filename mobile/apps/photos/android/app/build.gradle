@@ -97,7 +97,7 @@ android {
     productFlavors {
         independent {
             dimension "default"
-            applicationIdSuffix ".independent"
+            applicationId "com.saireddy.saiphotos"
         }
         dev {
             dimension "default"
