@@ -43,6 +43,28 @@ jobs:
             -validity 3650 -dname 'CN=Sai Photos Test Build'
       - name: Exclude Ente Firebase configuration from test package
         run: rm mobile/apps/photos/android/app/google-services.json
+      - name: Exclude development-only plugins from release registration
+        run: |
+          cat >> mobile/apps/photos/android/app/build.gradle <<'GRADLE'
+
+          // The generated registrant includes dev-only plugins that are not
+          // present on the independent release Java classpath.
+          tasks.matching { it.name == "compileIndependentReleaseJavaWithJavac" }.configureEach {
+              doFirst {
+                  def registrant = file("src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java")
+                  if (registrant.exists()) {
+                      def lines = registrant.readLines("UTF-8")
+                      def devPlugins = [
+                          "net.jonhanson.flutter_native_splash.FlutterNativeSplashPlugin",
+                          "dev.flutter.plugins.integration_test.IntegrationTestPlugin"
+                      ]
+                      registrant.setText(lines.findAll { line ->
+                          !devPlugins.any { plugin -> line.contains(plugin) }
+                      }.join("\n") + "\n", "UTF-8")
+                  }
+              }
+          }
+          GRADLE
       - name: Build ARM64 APK
         working-directory: mobile/apps/photos
         env:
