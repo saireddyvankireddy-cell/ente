@@ -41,6 +41,8 @@ jobs:
             -alias sai-photos-test -storepass "$signing_password" \
             -keypass "$signing_password" -keyalg RSA -keysize 3072 \
             -validity 3650 -dname 'CN=Sai Photos Test Build'
+      - name: Exclude Ente Firebase configuration from test package
+        run: rm mobile/apps/photos/android/app/google-services.json
       - name: Build ARM64 APK
         working-directory: mobile/apps/photos
         env:
