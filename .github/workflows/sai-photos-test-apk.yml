@@ -1,6 +1,9 @@
 name: Sai Photos test APK
 
 on:
+  push:
+    branches:
+      - codex/sai-photos-test-apk
   workflow_dispatch:
 
 permissions:
@@ -30,17 +33,19 @@ jobs:
         run: cargo codegen frb photos
       - name: Create test signing key
         run: |
+          set -euo pipefail
+          signing_password="$(openssl rand -hex 24)"
+          echo "::add-mask::$signing_password"
+          printf 'SIGNING_KEY_PASSWORD=%s\nSIGNING_STORE_PASSWORD=%s\n' "$signing_password" "$signing_password" >> "$GITHUB_ENV"
           keytool -genkeypair -keystore "$RUNNER_TEMP/sai-photos-test.jks" \
-            -alias sai-photos-test -storepass TestBuildOnly2026 \
-            -keypass TestBuildOnly2026 -keyalg RSA -keysize 3072 \
+            -alias sai-photos-test -storepass "$signing_password" \
+            -keypass "$signing_password" -keyalg RSA -keysize 3072 \
             -validity 3650 -dname 'CN=Sai Photos Test Build'
       - name: Build ARM64 APK
         working-directory: mobile/apps/photos
         env:
           SIGNING_KEY_PATH: ${{ runner.temp }}/sai-photos-test.jks
           SIGNING_KEY_ALIAS: sai-photos-test
-          SIGNING_KEY_PASSWORD: TestBuildOnly2026
-          SIGNING_STORE_PASSWORD: TestBuildOnly2026
         run: flutter build apk --release --flavor independent --target-platform android-arm64 --no-pub
       - name: Upload APK
         uses: actions/upload-artifact@v4
